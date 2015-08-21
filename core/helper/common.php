@@ -1,7 +1,8 @@
 <?php
-namespace CORE\HELPER\COMMON;
-
-function test()
+/**
+ *	hzf foo function
+ */
+function hzf()
 {
-	echo 'IT IS A HZF TEST FUNCTION!';
+	echo 'hzf runing!';
 }

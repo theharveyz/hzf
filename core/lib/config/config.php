@@ -41,7 +41,7 @@ class Config {
 		{
 			$configs[$k] = $this->configs[$k];
 		}
-		return $configs;
+		return count($configs) == 1 ? end($configs) : $configs;
 	}
 
 	static public function getInstance()
