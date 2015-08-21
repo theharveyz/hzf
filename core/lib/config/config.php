@@ -1,7 +1,7 @@
 <?php 
 namespace CORE\LIB\CONFIG;
 
-class Config {
+Final class Config {
 	static $instance = null;
 	var $configs  = array();
 	public function loadConfig($folder, $config_file_name = '*')
