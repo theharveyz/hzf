@@ -49,7 +49,6 @@ if(!defined('CORE_LOADER_PATH'))
 
 class BOOT {
 	static $necessary_classes = array(
-			CORE_LIB_PATH . 'config/config.php',
 			CORE_LOADER_PATH . 'loader.php',
 		);
 	static $necessary_helpers = array(
@@ -58,16 +57,22 @@ class BOOT {
 		);
 	static function run()
 	{
-		//初始化引入核心文件
+		/**初始化
+		 * 1, 引入核心文件
+		 * 2，引入自动载入机制
+		 * 3，引入核心配置文件
+		 * 4，引入辅助函数
+		 */
 		self::_init();
 
-		//注册自动引入机制
-		self::_autoLoad();
+		//路由分发
+		self::_routeDispatcher();
 	}
 
-	static private function _autoLoad()
+	static private function _routeDispatcher()
 	{
-		spl_autoload_register(array('\HZF_Loader', 'loadClass'));
+		$dispatcher = new \HZF_Dispatcher();
+		$dispatcher->run();
 	}
 
 	static private function _init()
@@ -77,21 +82,27 @@ class BOOT {
 		{
 			include $name;
 		}
+
+		//注册自动引入机制
+		self::_autoLoad();
+
 		//引入核心配置文件
 		CORE\LIB\CONFIG\Config::getInstance()->loadConfig(ROOT_CONF_PATH);
 
+		//设置自动引入类别名
+		CORE\LOADER\Loader::setClassAlias(CORE\LIB\CONFIG\Config::getInstance()->get('class_alias'));
+		
 		//引入核心函数
-		call_user_func_array(array('CORE\LOADER\Loader', 'loadHelper'), self::$necessary_helpers);
+		call_user_func_array(array('\HZF_Loader', 'loadHelper'), self::$necessary_helpers);
+	}
 
-		//声明类的别名
-		$class_alias = CORE\LIB\CONFIG\Config::getInstance()->get("class_alias");
-		if(!empty($class_alias))
-		{
-			foreach($class_alias as $class => $alias)
-			{
-				class_alias($class, $alias);
-			}
-		}
+	//注册自动载入机制
+	static private function _autoLoad()
+	{
+		spl_autoload_register(array('CORE\LOADER\Loader', 'loadClass'));
+
+		//设置类别名
+
 	}
 }
 
