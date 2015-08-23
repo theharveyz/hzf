@@ -67,6 +67,9 @@ class BOOT {
 
 		//路由分发
 		self::_routeDispatcher();
+		
+		PUBLICS\Demo::foo();
+
 	}
 
 	static private function _routeDispatcher()
@@ -91,7 +94,7 @@ class BOOT {
 
 		//设置自动引入类别名
 		CORE\LOADER\Loader::setClassAlias(CORE\LIB\CONFIG\Config::getInstance()->get('class_alias'));
-		
+
 		//引入核心函数
 		call_user_func_array(array('\HZF_Loader', 'loadHelper'), self::$necessary_helpers);
 	}
@@ -100,9 +103,6 @@ class BOOT {
 	static private function _autoLoad()
 	{
 		spl_autoload_register(array('CORE\LOADER\Loader', 'loadClass'));
-
-		//设置类别名
-
 	}
 }
 

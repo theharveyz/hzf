@@ -1,6 +1,5 @@
 <?php 
 namespace CORE\LOADER;
-
 /**
  *  0：核心加载类基本功能：
  *		1，可通过注册文件夹，来拓展加载类的作用范围
@@ -20,6 +19,7 @@ namespace CORE\LOADER;
 class Loader {
 	static $DS = '/';
 	static $root = null;
+	static $class_alias = array();
 	static $cache = array(
 			'helper' => array(),
 			'class'  => array(),
@@ -33,15 +33,38 @@ class Loader {
 						'class'  => array(),
 						'helper' => array(),
 					), 
-				'public' => array(
+				'publics' => array(
 						'class'  => array(),
 						'helper' => array(),
 					),
 			);
 
+	//设置别名类，避免依赖
+	static public function setClassAlias(array $alias)
+	{
+		self::$class_alias = $alias;
+	}
 	//类自动引入
 	static public function loadClass($class)
 	{
+		//优先从别名判断
+		//每次都要初始化一下，防止被污染
+		$class_alias = self::$class_alias;
+
+		//如果是别名
+		if(isset($class_alias[$class]))
+		{
+			//重新注册类别名
+			class_alias($class_alias[$class], $class);
+			//如果该类存在，则再次注册别名，并返回“from original class” ：从原类引入
+			if(class_exists($class_alias[$class]))
+			{
+				return 'from original class';
+			}
+			$class = $class_alias[$class];
+		}
+
+
 		$class = explode('\\', $class);
 		$type  = strtolower(current($class));
 		$class_name = array_pop($class);

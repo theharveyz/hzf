@@ -1,6 +1,6 @@
 <?php 
 return [
-	'CORE\LOADER\Loader'     => 'HZF_Loader',
-	'CORE\LIB\CONFIG\Config' => 'HZF_Config',
-	'CORE\LIB\ROUTE\Dispatcher' => 'HZF_Dispatcher',
+	'HZF_Loader'     => 'CORE\LOADER\Loader',
+	'HZF_Config'     => 'CORE\LIB\CONFIG\Config',
+	'HZF_Dispatcher' => 'CORE\LIB\ROUTE\Dispatcher',
 ];
