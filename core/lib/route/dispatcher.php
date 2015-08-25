@@ -7,6 +7,7 @@ namespace CORE\LIB\ROUTE;
 class Dispatcher {
 	//路由解析器
 	var $route_parser = null;
+	
 	public function run()
 	{
 		echo 'dispatcher';

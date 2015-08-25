@@ -44,7 +44,7 @@ Final class Config {
 		return count($configs) == 1 ? end($configs) : $configs;
 	}
 
-	static public function getInstance()
+	public static function getInstance()
 	{
 		if(is_null(self::$instance))
 		{

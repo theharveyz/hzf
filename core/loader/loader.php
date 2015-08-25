@@ -35,12 +35,12 @@ class Loader {
 			);
 
 	//设置别名类，避免依赖
-	static public function setClassAlias(array $alias)
+	public static function setClassAlias(array $alias)
 	{
 		self::$class_alias = $alias;
 	}
 	//类自动引入
-	static public function loadClass($class)
+	public static function loadClass($class)
 	{
 		//优先从别名判断
 		//每次都要初始化一下，防止被污染
@@ -84,7 +84,7 @@ class Loader {
 	}
 
 	//辅助函数自动引入
-	static public function loadHelper($helper)
+	public static function loadHelper($helper)
 	{
 		$helper = explode('\\', $helper);
 		$type = strtolower(current($helper));
@@ -109,7 +109,7 @@ class Loader {
 	}
 	
 	//共用自动引入方法
-	static private function _load($file, $type = 'class')
+	private static function _load($file, $type = 'class')
 	{
 		if(is_null(self::$root))
 		{
@@ -130,7 +130,7 @@ class Loader {
 	}
 
 	//注册ROOT_PATH
-	static public function registerRoot($root = '')
+	public static function registerRoot($root = '')
 	{
 		if(empty($root))
 		{
@@ -146,7 +146,7 @@ class Loader {
  	}
 
  	//注册自动引入路径
- 	static public function registerLoadPaths($folder_type, $file_type, $paths)
+ 	public static function registerLoadPaths($folder_type, $file_type, $paths)
  	{
  		if(isset(self::$paths[$folder_type]) && !empty($paths))
  		{
