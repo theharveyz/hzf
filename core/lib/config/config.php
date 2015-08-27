@@ -25,10 +25,10 @@ Final class Config {
 		}
 	}
 
-	public function push($key, $val = '')
+	public function push($key, $val = '', $merger = false)
 	{
-		$cover = isset($this->configs[$key]);
-		$this->configs[$key] = $val;
+		$cover = isset($this->configs[$key]) && !$merger;
+		$this->configs[$key] = $merger ? array_merge($this->configs[$key], $val) : $val;
 		return $cover;
 	}
 

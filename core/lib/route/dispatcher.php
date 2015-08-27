@@ -5,11 +5,15 @@ namespace CORE\LIB\ROUTE;
  */
 
 class Dispatcher {
+	//拦截器
+	static $intercepter = null;
 	//路由解析器
 	var $route_parser = null;
 	
-	public function run()
+	public static function run(\HZF_Intercepter $intercepter)
 	{
-		echo 'dispatcher';
+		if(is_null(self::$intercepter))
+			self::$intercepter = $intercepter;
+		self::$intercepter->foo();
 	}
 }

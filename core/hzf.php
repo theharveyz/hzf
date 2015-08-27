@@ -2,6 +2,10 @@
 /**
  *	hzf引导文件
  */
+if(!defined('HZF_START'))
+{
+	define('HZF_START', time(true));
+}
 if(!defined('DS'))
 {
 	define('DS', DIRECTORY_SEPARATOR);
@@ -68,14 +72,11 @@ class BOOT {
 		//路由分发
 		self::_routeDispatcher();
 		
-		PUBLICS\Demo::foo();
-
 	}
 
 	static private function _routeDispatcher()
 	{
-		$dispatcher = new \HZF_Dispatcher();
-		$dispatcher->run();
+		\HZF_Dispatcher::run(new \HZF_Intercepter());
 	}
 
 	static private function _init()
