@@ -11,7 +11,7 @@ namespace CORE\LOADER;
  *
  */	
 
-class Loader {
+Final class Loader {
 	static $DS = '/';
 	static $root = null;
 	static $class_alias = array();
@@ -19,19 +19,8 @@ class Loader {
 			'helper' => array(),
 			'class'  => array(),
 		);
-	static $paths = array(
-				'app'    => array(
-						'class'  => array(),
-						'helper' => array(),
-					), 
-				'core'   => array(
-						'class'  => array(),
-						'helper' => array(),
-					), 
-				'publics' => array(
-						'class'  => array(),
-						'helper' => array(),
-					),
+	static $app_version_nums = array(
+
 			);
 
 	//设置别名类，避免依赖
@@ -62,49 +51,29 @@ class Loader {
 
 		$class = explode('\\', $class);
 		$type  = strtolower(current($class));
-		$class_name = array_pop($class);
 		if(empty($class)) return false;
-		if(isset(self::$paths[$type]))
+		//针对app单独做处理
+		if($type == 'app' && isset($class[1]) && isset(self::$app_version_nums[strtolower($class[1])]))
 		{
-			$path = strtolower(implode(self::$DS, $class)) . self::$DS;
-			if(!in_array($path, self::$paths[$type]['class']))
-			{
-				array_unshift(self::$paths[$type]['class'], $path);
-			}
-			$file = null;
-			foreach(self::$paths[$type]['class'] as $p)
-			{
-				$file = $p . $class_name . '.php';
-				if(self::_load($file))
-					break;
-			}
-			return $file;
+			$version_num = self::$app_version_nums[strtolower($class[1])];
+			$class[1] .= $version_num ? '/' . $version_num : ''; 
 		}
-		return false;
+
+		$file = strtolower(implode(self::$DS, $class)) . '.php';
+		if(self::_load($file))
+				return $file;
+		return false;		
 	}
 
-	//辅助函数自动引入
-	public static function loadHelper($helper)
+	//辅助函数引入
+	public static function loadHelper($helpers = array(), $folder = '')
 	{
-		$helper = explode('\\', $helper);
-		$type = strtolower(current($helper));
-		$helper_name = array_pop($helper);
-		if(empty($helper)) return false;
-		if(isset(self::$paths[$type]))
+		if(empty($helpers)) return null;
+		$helpers = is_array($helpers) ? $helpers : array($helpers);
+		foreach($helpers as $helper)
 		{
-			$path = strtolower(implode(self::$DS, $helper)) . self::$DS;
-			if(!in_array($path, self::$paths[$type]['helper']))
-			{
-				array_unshift(self::$paths[$type]['helper'], $path);
-			}
-			$file = null;
-			foreach(self::$paths[$type]['helper'] as $p)
-			{
-				$file = $p . strtolower($helper_name) . '.php';
-				if(self::_load($file, 'helper'))
-					break;
-			}
-			return $file;
+			$file = $folder . $helper . '.php';
+			self::_load($file, 'helper');
 		}
 	}
 	
@@ -146,21 +115,11 @@ class Loader {
  	}
 
  	//注册自动引入路径
- 	public static function registerLoadPaths($folder_type, $file_type, $paths)
+ 	public static function registerApp($app_name, $app_version_num = '')
  	{
- 		if(isset(self::$paths[$folder_type]) && !empty($paths))
- 		{
- 			$paths = is_array($paths) ? $paths : array($paths);
- 			foreach($paths as $p)
- 			{
- 				if(file_exists(self::$root . $p))
- 				{
- 					self::$paths[$folder_type][$file_type][] = $p;
- 				}
- 			}
- 			return true;
- 		}
- 		return false;
+ 		if(empty($app_name)) return false;
+ 		self::$app_version_nums[$app_name] = $app_version_num;
+ 		return true;
  	}
 
 }

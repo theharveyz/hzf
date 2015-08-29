@@ -36,11 +36,6 @@ if(!defined('ROOT_VENDOR_PATH'))
 	define('ROOT_VENDOR_PATH', ROOT_PATH . 'vendor' . DS);
 }
 
-if(!defined('CORE_DRIVER_PATH'))
-{
-	define('CORE_DRIVER_PATH', CORE_PATH . 'driver' . DS);
-}
-
 if(!defined('CORE_LIB_PATH'))
 {
 	define('CORE_LIB_PATH', CORE_PATH . 'lib' . DS);
@@ -55,31 +50,14 @@ class BOOT {
 	static $necessary_classes = array(
 			CORE_LOADER_PATH . 'loader.php',
 		);
-	static $necessary_helpers = array(
-			'CORE\HELPER\COMMON',
-			'CORE\HELPER\ARRAY',
-		);
-	static function run()
-	{
-		/**初始化
-		 * 1, 引入核心文件
-		 * 2，引入自动载入机制
-		 * 3，引入核心配置文件
-		 * 4，引入辅助函数
-		 */
-		self::_init();
+	static $necessary_helpers = ['array', 'common'];
 
-		//路由分发
-		self::_routeDispatcher();
-		
-	}
-
-	static private function _routeDispatcher()
+	static function routeDispatcher()
 	{
 		\HZF_Dispatcher::run(new \HZF_Intercepter());
 	}
 
-	static private function _init()
+	static function init()
 	{
 		//引入必要的类
 		foreach(self::$necessary_classes as $name)
@@ -88,7 +66,7 @@ class BOOT {
 		}
 
 		//注册自动引入机制
-		self::_autoLoad();
+		spl_autoload_register(array('CORE\LOADER\Loader', 'loadClass'));
 
 		//引入核心配置文件
 		CORE\LIB\CONFIG\Config::getInstance()->loadConfig(ROOT_CONF_PATH);
@@ -96,15 +74,15 @@ class BOOT {
 		//设置自动引入类别名
 		CORE\LOADER\Loader::setClassAlias(CORE\LIB\CONFIG\Config::getInstance()->get('class_alias'));
 
-		//引入核心函数
-		call_user_func_array(array('\HZF_Loader', 'loadHelper'), self::$necessary_helpers);
+		//引入辅助文件
+		self::load();
 	}
 
-	//注册自动载入机制
-	static private function _autoLoad()
+	static function load()
 	{
-		spl_autoload_register(array('CORE\LOADER\Loader', 'loadClass'));
+		//引入核心函数
+		\HZF_Loader::loadHelper(self::$necessary_helpers, 'core/helper/');
 	}
 }
 
-BOOT::run();
+BOOT::init();
