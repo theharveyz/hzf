@@ -122,4 +122,10 @@ Final class Loader {
  		return true;
  	}
 
+ 	//注册vendor
+ 	public static function loadVendor($auto_load_file = '')
+ 	{
+ 		return require_once($auto_load_file);
+ 	}
+
 }

@@ -52,9 +52,30 @@ class BOOT {
 		);
 	static $necessary_helpers = ['array', 'common'];
 
-	static function routeDispatcher()
+	//应用名
+	static $APP_NAME = '';
+
+	//版本号
+	static $VN = '';
+
+	/**注册app
+	 *	@param $app_name：应用名称
+	 *	@param $vn：版本号
+	 */
+	static function registerApp($app_name, $vn = '')
 	{
-		\HZF_Dispatcher::run(new \HZF_Intercepter());
+		self::$APP_NAME = $app_name;
+		self::$VN = $vn;
+		//注册一个app
+		\HZF_Loader::registerApp($app_name, $vn);
+	}
+
+	//路由分发
+	static function routeDispatcher(array $route_config = array())
+	{
+		//mvc模式的controller
+		$namespace = "APP\\" . strtoupper(self::$APP_NAME) . "\CONTROLLER";
+		\HZF_Router::dispatch(\HZF_Intercepter::getInstance(), $namespace, $route_config);
 	}
 
 	static function init()

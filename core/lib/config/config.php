@@ -4,7 +4,7 @@ namespace CORE\LIB\CONFIG;
 Final class Config {
 	static $instance = null;
 	var $configs  = array();
-	public function loadConfig($folder, $config_file_name = '*')
+	public function loadConfig($folder, $config_file_name = '*', $merger = false)
 	{
 		if(!file_exists($folder)) return false;
 		$all_files = glob($folder . $config_file_name . '.php');
@@ -14,7 +14,7 @@ Final class Config {
 			{
 				$filename = explode('.', basename($file))[0];
 				$val      = include $file;
-				$this->push($filename, $val);
+				$this->push($filename, $val, $merger);
 			}
 
 			return $all_files;
