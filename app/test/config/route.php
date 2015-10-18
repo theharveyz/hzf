@@ -6,4 +6,5 @@ return [
 	'/{:num}' => function($num){
 		echo "$num";
 	},
+	'/feed.xml' => 'test@xml'
 ];

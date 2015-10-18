@@ -37,7 +37,6 @@ class Router {
 		if(is_null(self::$intercepter))
 			self::$intercepter = $intercepter;
 		self::$route_rules = array_merge(self::$route_rules, $route_rules);
-
 		$params = [];
 		$rule = '';
 
@@ -47,7 +46,7 @@ class Router {
 		$pattern_key_words = array_keys(static::$patterns);
 		$patterns_regxs = array_values(static::$patterns);
 
-		foreach(self::$route_rules as $uri => $handle)
+		foreach($route_rules as $uri => $handle)
 		{
 			$uri = str_replace($pattern_key_words, $patterns_regxs, $uri);
 			if($uri == self::$intercepter->uri)

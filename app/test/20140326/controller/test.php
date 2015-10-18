@@ -4,11 +4,16 @@ class Test {
 	public function foo($test = '')
 	{
 		echo $test;
-		echo "This is app test !";
 	}
 
-	public function __remap($method, $pararms = [])
+	public function xml()
 	{
-		var_dump($method, $pararms);
+		echo "xml!";
 	}
+
+	// public function __remap($method, $pararms = [])
+	// {
+	// 	var_dump($method, $pararms);
+	// 	foo();
+	// }
 }
