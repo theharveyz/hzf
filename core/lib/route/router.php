@@ -104,7 +104,18 @@ class Router {
 			}
 		}
 		try {
-			$controller = self::$namespace . '\\' . ucfirst($class);
+			$controller = rtrim(ltrim(self::$namespace, '\\') . '\\' . ucfirst($class), '\\');
+			//判断是否是标准类名
+			foreach(array_filter(explode('\\', $controller)) as $c)
+			{
+				preg_match('#^[a-zA-Z]([a-zA-Z0-9_])+$#', $c, $match);
+				if(!$match)
+				{
+					self::error();
+				}
+			}
+
+
 			$controller = new $controller;
 			if(method_exists($controller, '__remap'))
 			{
