@@ -62,7 +62,9 @@ Final class Loader {
 		$file = strtolower(implode(self::$DS, $class)) . '.php';
 		if(self::_load($file))
 				return $file;
-		return false;		
+		//抛出异常警告
+		throw new \Exception("class not found!");
+		die(2);
 	}
 
 	//辅助函数引入
@@ -95,7 +97,7 @@ Final class Loader {
 			}
 			return true;
 		}
-		return false;
+		throw new \Exception("helper not found!");
 	}
 
 	//注册ROOT_PATH

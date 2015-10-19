@@ -23,8 +23,6 @@ class Router {
 
 	//pattern
 	static $patterns = [
-			'{'    => '(',
-			'}'    => ')',
 			':any' => '[^/]+',
 			':num' => '[0-9]+',
 			':all' => '.*',
@@ -121,7 +119,7 @@ class Router {
 				self::error();
 
 			}
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			self::error();
 		}
 

@@ -50,7 +50,7 @@ class BOOT {
 	static $necessary_classes = array(
 			CORE_LOADER_PATH . 'loader.php',
 		);
-	static $necessary_helpers = ['array', 'common'];
+	static $necessary_helpers = ['array', 'common', 'error'];
 
 	//应用名
 	static $APP_NAME = '';
