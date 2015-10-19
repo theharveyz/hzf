@@ -51,7 +51,11 @@ Final class Loader {
 
 		$class = explode('\\', $class);
 		$type  = strtolower(current($class));
-		if(empty($class)) return false;
+		if(empty($class))
+		{
+			throw new \Exception("class not found!");
+			die(999);
+		}
 		//针对app单独做处理
 		if($type == 'app' && isset($class[1]) && isset(self::$app_version_nums[strtolower($class[1])]))
 		{
@@ -64,7 +68,7 @@ Final class Loader {
 				return $file;
 		//抛出异常警告
 		throw new \Exception("class not found!");
-		die(2);
+		die(999);
 	}
 
 	//辅助函数引入
@@ -75,7 +79,11 @@ Final class Loader {
 		foreach($helpers as $helper)
 		{
 			$file = $folder . $helper . '.php';
-			self::_load($file, 'helper');
+			if(!self::_load($file, 'helper'))
+			{
+				throw new \Exception("helper not found!");
+				die(999);
+			}
 		}
 	}
 	
@@ -97,7 +105,6 @@ Final class Loader {
 			}
 			return true;
 		}
-		throw new \Exception("helper not found!");
 	}
 
 	//注册ROOT_PATH
