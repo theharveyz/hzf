@@ -1,0 +1,24 @@
+{
+  "name": "ZhangHarvey/HZF",
+  "description": "A lightweight PHP framework created by HarveyZ",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "HarveyZ",
+      "email": "geekwebme@gmail.com",
+      "homepage": "http://geekweb.me"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.10"
+  },
+  "require-dev": {
+  },
+  "suggest": {
+    "ext-redis": "*",
+    "ext-gearman": "*"
+  },
+  "autoload": {
+    "psr-4": {"HZF\\": "src/HZF"}
+  }
+}

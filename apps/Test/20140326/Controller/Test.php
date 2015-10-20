@@ -1,8 +1,10 @@
 <?php 
-namespace APP\TEST\CONTROLLER;
+namespace Test\Controller;
 class Test {
 	public function foo($test = '')
 	{
+		$str = 'asdf\b\c';
+		var_dump(strtr($str, "\\", "/"));
 		echo $test;
 	}
 

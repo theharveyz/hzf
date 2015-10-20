@@ -1,5 +1,5 @@
 <?php 
-namespace CORE\LIB\CONFIG;
+namespace HZF\Config;
 
 Final class Config {
 	static $instance = null;

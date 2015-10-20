@@ -1,5 +1,5 @@
 <?php 
-namespace CORE\LOADER;
+namespace HZF\Loader;
 /**
  *  0：核心加载类基本功能：
  *		1)，可通过注册文件夹，来拓展加载类的作用范围
@@ -12,7 +12,6 @@ namespace CORE\LOADER;
  */	
 
 Final class Loader {
-	static $DS = '/';
 	static $root = null;
 	static $class_alias = array();
 	static $cache = array(
@@ -48,27 +47,24 @@ Final class Loader {
 			$class = $class_alias[$class];
 		}
 
-
-		$class = explode('\\', $class);
-		$type  = strtolower(current($class));
-		if(empty($class))
+		$file = strtr($class, "\\", DIRECTORY_SEPARATOR) . ".php";
+		//遍历root
+		if(!empty(self::$root))
 		{
-			throw new \Exception("class not found!");
-			die(999);
+			foreach(self::$root as $ns => $path)
+			{
+				if(strpos($file, $ns) === 0)
+				{
+					$file = $path . str_replace($ns . DIRECTORY_SEPARATOR, '', $file);
+					if(empty($path))
+						throw new \Exception("loader root path is empty, namespace : $ns", 999);
+					if(self::_load($file))
+							return $file;
+					//抛出异常警告
+					throw new \Exception("class not found!", 999);
+				}
+			}
 		}
-		//针对app单独做处理
-		if($type == 'app' && isset($class[1]) && isset(self::$app_version_nums[strtolower($class[1])]))
-		{
-			$version_num = self::$app_version_nums[strtolower($class[1])];
-			$class[1] .= $version_num ? '/' . $version_num : ''; 
-		}
-
-		$file = strtolower(implode(self::$DS, $class)) . '.php';
-		if(self::_load($file))
-				return $file;
-		//抛出异常警告
-		throw new \Exception("class not found!");
-		die(999);
 	}
 
 	//辅助函数引入
@@ -81,8 +77,7 @@ Final class Loader {
 			$file = $folder . $helper . '.php';
 			if(!self::_load($file, 'helper'))
 			{
-				throw new \Exception("helper not found!");
-				die(999);
+				throw new \Exception("helper not found!", 999);
 			}
 		}
 	}
@@ -90,12 +85,6 @@ Final class Loader {
 	//共用自动引入方法
 	private static function _load($file, $type = 'class')
 	{
-		if(is_null(self::$root))
-		{
-			$return = self::registerRoot();
-			if(!$return) return false;
-		}
-		$file = self::$root . $file;
 		if(file_exists($file))
 		{
 			if(!in_array($file, self::$cache[$type]))
@@ -105,36 +94,19 @@ Final class Loader {
 			}
 			return true;
 		}
+		throw new \Exception("file not found!", 999);
+		
 	}
 
 	//注册ROOT_PATH
-	public static function registerRoot($root = '')
+	public static function registerRoot($namespace, $root = '')
 	{
-		if(empty($root))
+		if(empty($namespace) || empty($root))
 		{
-			if(defined('ROOT_PATH'))
-			{
-				self::$root = ROOT_PATH;
-
-			}
-			return !is_null(self::$root);
+			throw new Exception("register root error", 999);
 		}
-		self::$root = $root;
+		self::$root[$namespace] = $root;
 		return true;
- 	}
-
- 	//注册自动引入路径
- 	public static function registerApp($app_name, $app_version_num = '')
- 	{
- 		if(empty($app_name)) return false;
- 		self::$app_version_nums[$app_name] = $app_version_num;
- 		return true;
- 	}
-
- 	//注册vendor
- 	public static function loadVendor($auto_load_file = '')
- 	{
- 		return require_once($auto_load_file);
  	}
 
 }

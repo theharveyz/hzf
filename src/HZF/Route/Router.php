@@ -1,5 +1,5 @@
 <?php 
-namespace CORE\LIB\ROUTE;
+namespace HZF\Route;
 /**
  *	路由分发器:
  *		1, 根据路由规则实现分发
@@ -11,8 +11,6 @@ class Router {
 	static $intercepter = null;
 	//路由解析器
 	static $route_parser = null;
-	//路由空间
-	static $namespace = '';
 	//路由规则
 	/**
 	 *	'/a/b' => ['GET' => '', POST => ''] 或者
@@ -29,9 +27,8 @@ class Router {
 		];
 
 	//分发
-	public static function dispatch(\HZF_Intercepter $intercepter, $namespace, array $route_rules = array())
+	public static function dispatch(\HZF_Intercepter $intercepter, array $route_rules = array())
 	{
-		self::$namespace = $namespace;
 		if(is_null(self::$intercepter))
 			self::$intercepter = $intercepter;
 		self::$route_rules = array_merge(self::$route_rules, $route_rules);
@@ -104,7 +101,7 @@ class Router {
 			}
 		}
 		try {
-			$controller = rtrim(ltrim(self::$namespace, '\\') . '\\' . ucfirst($class), '\\');
+			$controller = rtrim(ucfirst($class), '\\');
 			//判断是否是标准类名
 			foreach(array_filter(explode('\\', $controller)) as $c)
 			{

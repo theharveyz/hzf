@@ -1,5 +1,5 @@
 <?php
-namespace CORE\DATA\DATABASE;
+namespace HZF\Data\Database;
 class Base {
 	var $foo = 'database';
 }

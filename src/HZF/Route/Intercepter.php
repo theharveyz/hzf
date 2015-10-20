@@ -1,5 +1,5 @@
 <?php 
-namespace CORE\LIB\ROUTE;
+namespace HZF\Route;
 
 class Intercepter {
 	static $instance = null;
