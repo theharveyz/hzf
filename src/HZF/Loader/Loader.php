@@ -61,10 +61,10 @@ Final class Loader {
 					if(self::_load($file))
 							return $file;
 					//抛出异常警告
-					throw new \Exception("class not found!", 999);
 				}
 			}
 		}
+		throw new \Exception("class not found!", 999);
 	}
 
 	//辅助函数引入
@@ -80,6 +80,7 @@ Final class Loader {
 				throw new \Exception("helper not found!", 999);
 			}
 		}
+		return true;
 	}
 	
 	//共用自动引入方法
@@ -94,8 +95,7 @@ Final class Loader {
 			}
 			return true;
 		}
-		throw new \Exception("file not found!", 999);
-		
+		return false;
 	}
 
 	//注册ROOT_PATH
