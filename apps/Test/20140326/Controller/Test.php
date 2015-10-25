@@ -1,7 +1,7 @@
 <?php 
 namespace Test\Controller;
 class Test {
-	public function foo($test = '')
+	public function foo(\HZF\Boot $test)
 	{
 		$str = 'asdf\b\c';
 		var_dump(strtr($str, "\\", "/"));
@@ -10,6 +10,14 @@ class Test {
 
 	public function xml()
 	{
+		$reflector = new \ReflectionParameter(array(self::class, 'foo'), 0);
+		var_dump($reflector->getClass()->name);
+		$func = function(\HZF\Boot $test){
+
+		};
+		$reflector = new \ReflectionFunction($func);
+		var_dump($reflector->getClass()->name);
+
 		echo "xml!";
 	}
 

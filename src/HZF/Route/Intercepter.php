@@ -26,7 +26,6 @@ class Intercepter {
 	public function fetchSegs($uri_string)
 	{
 		return $this->_explodeSegments($uri_string);
-		// return array_values(array_filter(explode('/', $uri)));
 	}
 
 	/**
@@ -93,13 +92,13 @@ class Intercepter {
 	public function isAjax()
 	{
 		//XHR
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
-        ) 
-        {
-            $this->isAjax = TRUE;
-        }
-        return $this->isAjax;
+	    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+	            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
+	    ) 
+	    {
+	        $this->isAjax = TRUE;
+	    }
+	    return $this->isAjax;
 	}
 
 	static function getInstance()
@@ -178,8 +177,10 @@ class Intercepter {
 	{
 		//HTTP 400 BAD REQUEST! 
 		//注意：HTTP版本号 /HTTP状态吗
-		header($_SERVER['SERVER_PROTOCOL'] . " 400 BAD REQUEST");
-		echo $msg;exit;
+		// header($_SERVER['SERVER_PROTOCOL'] . " 400 BAD REQUEST");
+		// echo $msg;exit;
+		throw new \Exception(" 400 BAD REQUEST $msg", 999);
+		
 	}
 
 }

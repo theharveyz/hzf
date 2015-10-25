@@ -112,11 +112,11 @@ class Router {
 				}
 			}
 
-
 			$controller = new $controller;
 			if(method_exists($controller, '__remap'))
 			{
-				return $controller->__remap($action, $params);
+				$params = array($method, $action);
+				$action = '__remap';
 			}
 			else
 			{
@@ -136,10 +136,13 @@ class Router {
 	//匹配执行
 	private static function exe($callback, $params = array())
 	{
-		if(empty($params))
-			return call_user_func($callback);
-		else
-			return call_user_func_array($callback, $params);
+		if(is_array($callback) && is_object($callback[0]))
+		{
+			$reflectionMethod = new \ReflectionMethod($callback[0], $callback[1]);
+			if(!$reflectionMethod->isPublic())
+				throw new \Exception("No access to the method  =====> [class: " . $reflectionMethod->class . "] [" . $reflectionMethod->__toString() . "]\n", 999);
+		}
+		return call_user_func_array($callback, $params);
 	}
 
 	//错误处理

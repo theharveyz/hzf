@@ -11,7 +11,7 @@ namespace HZF\Loader;
  *
  */	
 
-Final class Loader {
+class Loader {
 	static $root = null;
 	static $class_alias = array();
 	static $cache = array(
