@@ -18,6 +18,9 @@ class Instance {
 
 	public static function get($class = null)
 	{
-		
+		if($class){
+			return make($class);
+		}
+		return $this->class ? make($this->class) : null;
 	}
 }
