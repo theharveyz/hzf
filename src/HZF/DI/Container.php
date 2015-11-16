@@ -128,7 +128,7 @@ class Container extends HzfObject
 
         //获取定义
         $definition = $this->_definitions[$concrete];
-        //如果是回调
+        //如果是回调, 或者闭包
         if (is_callable($definition, true)) {
             $params = $this->mergerParmas($concrete, $params);
             $this->resolveDependencies($params);
@@ -191,7 +191,6 @@ class Container extends HzfObject
         //获取类反射：这里的反射在对象第一次创建时自动缓存
         list($dependencies, $reflectionClass) = $this->getRefectionAndDependenciesParameters($concrete);
         $dependencies                         = $this->getDependencies($dependencies, $params);
-
         $this->resolveDependencies($dependencies, $reflectionClass);
         $object = $reflectionClass->newInstanceArgs($dependencies);
         if (!empty($config)) {
@@ -231,7 +230,7 @@ class Container extends HzfObject
         //是否字符串
         if (is_string($concrete)) {
             if (isset($this->_reflections[$concrete])) {
-                return [$this->_reflections[$concrete], $this->_dependencies[$concrete]];
+                return [$this->_dependencies[$concrete], $this->_reflections[$concrete]];
             }
         }
         $dependencies = [];
@@ -279,10 +278,10 @@ class Container extends HzfObject
         }
 
         if (is_string($concrete)) {
+
             $this->_dependencies[$concrete] = $dependencies;
             $this->_reflections[$concrete]  = $reflection;
         }
-
         return [$dependencies, $reflection];
 
     }
@@ -292,12 +291,11 @@ class Container extends HzfObject
      * @param  object $func
      * @return mixed
      */
-    protected function getDependencies(array $reflectionParameters, array &$params = [])
+    protected function getDependencies($reflectionParameters, array &$params = [])
     {
         $dependencies = [];
-        if (!empty($reflectionParameters)) {
+        if ($reflectionParameters) {
             foreach ($reflectionParameters as $param) {
-
                 if (!empty($params) && array_key_exists($param->name, $params)) {
                     $dependencies[] = $params[$param->name];
                     //删除该参数值
@@ -308,13 +306,12 @@ class Container extends HzfObject
                     } else {
                         $c = $param->getClass();
                         //如果该参数没有被声明为一个对象，则返回空的Instance对象进行站位
-                        $dependencies[] = $c == null ? '' : Instance::of($c);
+                        $dependencies[] = $c == null ? '' : Instance::of($c->name);
                     }
                 }
 
             }
         }
-
         return $dependencies;
     }
 
@@ -380,10 +377,9 @@ class Container extends HzfObject
     /**
      *    三种形式：
      *        1，a::b //通常用于调用类中的静态方法
-     *        2，closure
-     *        3，a@b  //调用类中的普通方法，此方法需要类被创建，并且方法的参数也要通过反射获取
+     *        2，a@b  //调用类中的普通方法，此方法需要类被创建，并且方法的参数也要通过反射获取
      *               注意：当只写a时，有默认的调用方法也是可以的
-     *        4，[(obj), method] 数组方式调用，一般情况下第三种方式可以先转换为第四种，然后再执行call方法
+     *        3，[(obj), method] 数组方式调用，一般情况下第三种方式可以先转换为第四种，然后再执行call方法
      */
     public function call($call, array $params = [], $defaultMethod = null)
     {

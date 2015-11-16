@@ -36,7 +36,6 @@ class Loader extends HzfObject
         //优先从别名判断
         //每次都要初始化一下，防止被污染
         $class_alias = self::$class_alias;
-
         //如果是别名
         if (isset($class_alias[$class])) {
             //重新注册类别名

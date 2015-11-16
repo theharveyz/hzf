@@ -1,8 +1,10 @@
 <?php
 require_once "../vendor/autoload.php";
-$boot = new HZF\Application();
-$boot->init(__DIR__ . '/../' . 'conf' . '/')
-    ->registerApp('Test', __DIR__ . '/../apps/Test/20140326/')
+$root = dirname(__DIR__) . '/';
+$app = new HZF\Application();
+$app->init($root)
+    ->registerApp('Test', 20140326)
+    ->bootstrap()
     ->routeDispatcher([
         '/test/(:num)' => array(
             'get'  => function ($num) {
@@ -16,4 +18,5 @@ $boot->init(__DIR__ . '/../' . 'conf' . '/')
             echo "$num";
         },
         '/feed.xml'    => 'Test\Controller\Test@xml',
+        '/test/foo'    => 'Test\Controller\Test@foo',
     ]);

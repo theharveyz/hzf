@@ -7,7 +7,10 @@ namespace HZF;
 
 use Exception;
 use HZF\DI\Container;
-use HZF\LOADER\Loader as Loader;
+use HZF\Loader\Loader as Loader;
+use HZF\Route\Router as Router;
+use HZF\Config\Config as Config;
+use HZF\Http\Request as Request;
 
 if (!defined('HZF_CORE_PATH')) {
     define('HZF_CORE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR);
@@ -24,10 +27,18 @@ if (!defined('HZF_CORE_HELPER_PATH')) {
 class Application extends Container
 {
 
-    public $necessary_classes = array(
-        HZF_CORE_LOADER_PATH . 'Loader.php',
-    );
-    public $necessary_helpers = ['array', 'common', 'error'];
+    public static $app = null;
+
+    public $necessary_helpers = ['array', 'common'];
+
+    //根目录
+    public $root;
+
+    //应用目录
+    public $app_root;
+
+    //核心配置目录
+    public $core_conf_folder;
 
     //应用名
     public $APP_NAME = '';
@@ -36,11 +47,11 @@ class Application extends Container
     public $VN = '';
 
     //框架默认命名
-    public $namespace = 'HZF';
+    private $namespace = 'HZF';
 
-    public function __construct()
-    {
-    }
+    //服务
+    protected $services = [];
+
 
     /**注册app
      *    @param $app_name：应用名称
@@ -50,8 +61,10 @@ class Application extends Container
     {
         $this->APP_NAME = $app_name;
         $this->VN       = $vn;
+        $this->app_root = $this->root . 'apps' . DIRECTORY_SEPARATOR . $app_name . DIRECTORY_SEPARATOR;
         //注册一个app
-        \HZF_Loader::registerRoot($app_name, $vn);
+        Loader::registerRoot($app_name, $this->app_root . $vn . DIRECTORY_SEPARATOR);
+
         return $this;
     }
 
@@ -59,9 +72,9 @@ class Application extends Container
     public function routeDispatcher(array $route_config = array())
     {
         //mvc模式的controller
-        list($status, $callback, $params, $method) = \HZF_Router::dispatch($this->make('HZF\Http\Request'), $route_config);
+        list($status, $callback, $params, $method) = Router::dispatch($this->make('Request'), $route_config);
         switch ($status) {
-            case \HZF_Router::FOUND:
+            case Router::FOUND:
                 $this->dispatcher($callback, $params);
                 break;
 
@@ -72,33 +85,74 @@ class Application extends Container
         return $this;
     }
 
-    public function init($core_conf_folder)
+    //初始化app
+    public function init($root_dir, $core_conf_folder = '')
     {
-        //引入必要的类
-        foreach ($this->necessary_classes as $name) {
-            include $name;
-        }
+        //注册root路径
+        $this->root = $root_dir;
+
+        $this->core_conf_folder = $core_conf_folder ? : $this->root . 'conf' . DIRECTORY_SEPARATOR;
+
         //注册框架root路径
         Loader::registerRoot($this->namespace, HZF_CORE_PATH);
 
         //注册自动引入机制
-        spl_autoload_register(array('HZF\Loader\Loader', 'loadClass'));
-        //引入核心配置文件
-        //set
-        $this->bind('config', ['class' => 'HZF\Config\Config']);
-        $config = $this->make("config");
-        $config->loadConfig($core_conf_folder);
-        //设置自动引入类别名
-        Loader::setClassAlias($config->get('class_alias'));
+        spl_autoload_register(array(Loader::class, 'loadClass'));
+
+        //注册服务
+        $this->registerServices();
+
         //引入辅助文件
-        $this->load();
+        $this->loadNecessaryFiles();
+
+        //单例
+        self::$app = $this;
+
         return $this;
     }
 
-    private function load()
+    //启动
+    public function bootstrap()
+    {
+        //初始化配置
+        $this->initConfig();
+
+        return $this;
+    }
+
+    //初始化配置
+    private function initConfig()
+    {
+        $config = $this->make('Config');
+        $config->loadConfig($this->core_conf_folder);
+    }
+
+    //注册服务
+    private function registerServices()
+    {
+        $this->services = array_merge($this->defaultsServices(), $this->services);
+        foreach($this->services as $service => $config){
+            $this->singleton($config['class'], $config);
+            $this->alias($service, $config['class']);
+        }
+    }
+
+    private function defaultsServices()
+    {
+        return [
+            'Config' => [
+                'class' => Config::class
+            ],
+            'Request' => [
+                'class' => Request::class
+            ]
+        ];
+    }
+
+    private function loadNecessaryFiles()
     {
         //引入核心函数
-        \HZF_Loader::loadHelper($this->necessary_helpers, HZF_CORE_HELPER_PATH);
+        Loader::loadHelper($this->necessary_helpers, HZF_CORE_HELPER_PATH);
     }
 
     public function dispatcher($callback, $params = [])
@@ -117,7 +171,7 @@ class Application extends Container
                 return $this->call(array($controller, $action), $params);
             }
         } catch (Exception $e) {
-
+                self::error();
         }
 
     }
