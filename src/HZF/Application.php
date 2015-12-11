@@ -7,11 +7,13 @@ namespace HZF;
 
 use Exception;
 use HZF\DI\Container;
-use HZF\Loader\Loader as Loader;
-use HZF\Route\Router as Router;
-use HZF\Config\Config as Config;
-use HZF\Http\Request as Request;
-
+use HZF\Support\Loader;
+use HZF\Support\ServiceProvider;
+use HZF\Support\ProviderRepository;
+use HZF\Route\Router;
+use HZF\Config\Config;
+use HZF\Http\Request;
+use HZF\Support\Providers\ConfigServiceProvider as ConfigProvider;
 if (!defined('HZF_CORE_PATH')) {
     define('HZF_CORE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 }
@@ -29,29 +31,50 @@ class Application extends Container
 
     public static $app = null;
 
-    public $necessary_helpers = ['array', 'common'];
+    //是否启动
+    protected $booted = false;
+
+    //启动中触发的闭包集合
+    protected $bootingCallbacks = [];
+
+    //已经注册的服务提供者实例缓存
+    protected $serviceProviders = [];
+
+    //已经被载入的服务提供者名称
+    protected $loadedServiceProviders = [];
+
+    /**
+     * 缓载的服务提供者：通过某些服务被调用时触发被缓载的服务提供者执行注册操作
+     * 服务名 => 要缓载的服务提供者
+     */
+    protected $deferredServiceProviders = [];
+
+    //所需文件
+    protected $necessary_helpers = ['array', 'common'];
 
     //根目录
-    public $root;
+    protected $root;
 
     //应用目录
-    public $app_root;
+    protected $app_root;
 
     //核心配置目录
-    public $core_conf_folder;
+    protected $core_conf_folder;
 
     //应用名
-    public $APP_NAME = '';
+    protected $APP_NAME = '';
 
     //版本号
-    public $VN = '';
+    protected $VN = '';
 
     //框架默认命名
-    private $namespace = 'HZF';
+    protected $namespace = 'HZF';
 
-    //服务
-    protected $services = [];
+    //服务收集器
+    protected $providerRepository;
 
+    //配置对象
+    protected $config;
 
     /**注册app
      *    @param $app_name：应用名称
@@ -64,7 +87,6 @@ class Application extends Container
         $this->app_root = $this->root . 'apps' . DIRECTORY_SEPARATOR . $app_name . DIRECTORY_SEPARATOR;
         //注册一个app
         Loader::registerRoot($app_name, $this->app_root . $vn . DIRECTORY_SEPARATOR);
-
         return $this;
     }
 
@@ -72,17 +94,23 @@ class Application extends Container
     public function routeDispatcher(array $route_config = array())
     {
         //mvc模式的controller
-        list($status, $callback, $params, $method) = Router::dispatch($this->make('Request'), $route_config);
-        switch ($status) {
-            case Router::FOUND:
-                $this->dispatcher($callback, $params);
-                break;
+        try {
+            list($status, $callback, $params, $method) = Router::dispatch($this->make('request'), $route_config);
+            switch ($status) {
+                case Router::FOUND:
+                    $this->dispatcher($callback, $params);
+                    break;
 
-            default:
-                self::error();
-                break;
+                default:
+                    self::error();
+                    break;
+            }            
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        } finally {
+            return $this;
         }
-        return $this;
+
     }
 
     //初始化app
@@ -99,8 +127,11 @@ class Application extends Container
         //注册自动引入机制
         spl_autoload_register(array(Loader::class, 'loadClass'));
 
-        //注册服务
-        $this->registerServices();
+        //注册alias
+        $this->registerCoreContainerAlias();
+
+        //注册基础服务提供者
+        $this->registerBaseServicesProviders();
 
         //引入辅助文件
         $this->loadNecessaryFiles();
@@ -108,45 +139,163 @@ class Application extends Container
         //单例
         self::$app = $this;
 
+        //初始化配置
+        $this->initConfig();
+        //服务仓库收集服务提供者底层服务提供者
+        $this->registerConfiguredProviders();
+
         return $this;
+    }
+
+    //收集服务提供者
+    public function registerConfiguredProviders()
+    {
+        ((new ProviderRepository($this))->load($this->config['base']['providers']));
     }
 
     //启动
     public function bootstrap()
     {
-        //初始化配置
-        $this->initConfig();
-
+        //启动服务
+        $this->bootServices();
         return $this;
     }
 
     //初始化配置
     private function initConfig()
     {
-        $config = $this->make('Config');
+        $config = $this->make('config');
         $config->loadConfig($this->core_conf_folder);
+        $this->config = $config->configs;
     }
 
-    //注册服务
-    private function registerServices()
+    //注册基础服务提供者
+    protected function registerBaseServicesProviders()
     {
-        $this->services = array_merge($this->defaultsServices(), $this->services);
-        foreach($this->services as $service => $config){
-            $this->singleton($config['class'], $config);
-            $this->alias($service, $config['class']);
+        $this->registerServiceProvider($this->getProviderInstance(ConfigProvider::class));
+    }
+
+    //获取服务提供者实例
+    public function getProviderInstance($provider)
+    {
+        return new $provider($this);
+    }
+
+    //对象构造接口
+    public function make($abstract, $params = [], $config = [])
+    {
+        $concrete = $this->getAlias($abstract);
+        if(isset($this->deferredServiceProviders[$concrete])) {
+            //缓载提供者
+            $this->loadDeferredProvider($concrete);
+        }
+
+        return parent::make($concrete, $params, $config);
+    }
+
+    /**
+     * 设置延迟注册的服务提供者
+     */
+    public function setDeferredServiceProviders(array $serviceProviders)
+    {
+        $this->deferredServiceProviders = $serviceProviders;
+    }
+
+    //加载缓载服务提供者
+    public function loadDeferredProvider($service)
+    {
+        if(!isset($this->deferredServiceProviders[$service]))
+            return ;
+        if($service)
+            unset($this->deferredServiceProviders[$service]);
+        $provider = $this->deferredServiceProviders[$service];
+
+        //不可重复加载
+        if(!isset($this->loadedServiceProviders[$provider])){
+            $this->registerServiceProvider($this->getProviderInstance($provider));
+        }
+
+    }
+
+    //注册服务提供者
+    public function registerServiceProvider(ServiceProvider $provider, $force = false)
+    {
+        //在非强制注册下，已经注册不能重复注册
+        if(isset($this->loadedServiceProviders[get_class($provider)]) && !$force){
+            return $provider;
+        }
+        //启动注册服务
+        $provider->register(); 
+        //标记服务提供者
+        $this->markAsRegistered($provider);
+
+        //app是否启动
+        if($this->booted){
+            //调用
+            $this->bootProvider($provider);
+        } else {
+            $this->booting(function() use ($provider) {
+                $this->bootProvider($provider);
+            });
         }
     }
 
-    private function defaultsServices()
+    //启动服务提供者
+    public function bootServices()
     {
-        return [
-            'Config' => [
-                'class' => Config::class
-            ],
-            'Request' => [
-                'class' => Request::class
-            ]
+        //整个程序有且只有一次被启动
+        if($this->booted)
+            return ;
+        //启动
+        $this->fireCallbacks($this->bootingCallbacks);
+        $this->booted = true;
+    }
+
+    //处理回调
+    public function fireCallbacks(array $callbacks)
+    {
+        if(empty($callbacks)) return ;
+        foreach($callbacks as $callback){
+            call_user_func($callback, $this);
+        }
+    }
+
+    //正在启动一个服务
+    public function booting($callback)
+    {
+        $this->bootingCallbacks[] = $callback;
+    }
+
+    //标记服务提供者被注册
+    public function markAsRegistered(ServiceProvider $provider)
+    {
+        $class = get_class($provider);
+        $this->serviceProviders[$class] = $provider;
+        $this->loadedServiceProviders[$class] = true;
+    }
+
+    //启动服务提供者
+    public function bootProvider(ServiceProvider $provider)
+    {  
+        //可以注入依赖对象
+        if(method_exists($provider, 'boot'))
+            $this->call([$provider, 'boot']);
+    }
+
+    //注册默认的class alias
+    protected function registerCoreContainerAlias()
+    {
+        $aliases = [
+            'app'     => ['HZF\Application', 'HZF\DI\Container'],
+            'config'  => 'HZF\Config\Config',
+            'request' => 'HZF\Http\Request',
         ];
+        foreach($aliases as $alias => $concrete){
+            $concrete = is_array($concrete) ? $concrete : [$concrete];
+            foreach ($concrete as $c) {
+                $this->alias($alias, $c);
+            }
+        }
     }
 
     private function loadNecessaryFiles()
@@ -171,7 +320,8 @@ class Application extends Container
                 return $this->call(array($controller, $action), $params);
             }
         } catch (Exception $e) {
-                self::error();
+            self::error();
+            echo $e->getMessage();
         }
 
     }
@@ -190,6 +340,18 @@ class Application extends Container
             echo "╮(╯_╰)╭ <br><br><br>404 NOT FOUND!" . (empty($callback) ? '' : " [ERR INFO: $callback]");
             exit;
         }
+    }
+
+    /**
+     * 获取配置
+     */
+    public function config($key = '')
+    {
+        if(empty($key)) {
+            return $this->config;
+        }
+
+        return $this->config[$key];
     }
 
 }

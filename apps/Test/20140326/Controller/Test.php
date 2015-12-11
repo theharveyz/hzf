@@ -8,6 +8,7 @@ class Test
     {
         $this->a = $a;
     }
+
     public function foo(Config $config)
     {
         $str = 'asdf\b\c';
@@ -17,13 +18,12 @@ class Test
 
     public function xml()
     {
-
         echo "xml!";
     }
 
     // public function __remap($method, $pararms = [])
     // {
     //     var_dump($method, $pararms);
-    //     foo();
+    //     // foo();
     // }
 }

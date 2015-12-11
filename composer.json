@@ -10,13 +10,13 @@
     }
   ],
   "require": {
-    "php": ">=5.3.10"
+    "php": ">=5.3.10",
+    "illuminate/database": "*",
+    "raven/raven": "0.13.*"
   },
   "require-dev": {
   },
   "suggest": {
-    "ext-redis": "*",
-    "ext-gearman": "*"
   },
   "autoload": {
     "psr-4": {"HZF\\": "src/HZF"}
